@@ -1,8 +1,11 @@
+"use client";
+
 import { ProductCard } from "@/components/store/product-card";
 import { StoreShell } from "@/components/store/store-shell";
-import { products } from "@/lib/mock-data";
+import { useProducts } from "@/components/store/product-context";
 
 export default function ShopPage() {
+  const { products } = useProducts();
   return (
     <StoreShell active="shop">
       <section className="spectra-container flex flex-col gap-8 py-12 md:flex-row">
@@ -13,33 +16,42 @@ export default function ShopPage() {
               <div className="space-y-2 text-sm text-zinc-600">
                 <label className="flex items-center gap-2">
                   <input type="checkbox" defaultChecked className="h-4 w-4" />
-                  <span className="font-medium text-[#1e2a44]">Sunglasses</span>
+                  <span className="font-medium text-[#1e2a44]">Cleansers</span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input type="checkbox" className="h-4 w-4" />
-                  <span>Optical</span>
+                  <span>Serums & Treatments</span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input type="checkbox" className="h-4 w-4" />
-                  <span>Blue Light</span>
+                  <span>Moisturizers</span>
                 </label>
               </div>
             </div>
 
             <div className="border-t border-[#e5e2e1] pt-5">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Color</h3>
-              <div className="flex flex-wrap gap-2">
-                {["#111111", "#7A4B2A", "#D4AF37", "#A0A0A0", "#20422E"].map((color) => (
-                  <button key={color} className="h-6 w-6 rounded-full ring-1 ring-zinc-300" style={{ backgroundColor: color }} />
-                ))}
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">Skin Type</h3>
+              <div className="space-y-2 text-sm text-zinc-600">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" className="h-4 w-4" />
+                  <span>Oily / Acne-Prone</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" className="h-4 w-4" />
+                  <span>Dry / Dehydrated</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" className="h-4 w-4" />
+                  <span>Aging / Mature</span>
+                </label>
               </div>
             </div>
 
             <div className="border-t border-[#e5e2e1] pt-5">
-              <label className="flex items-center gap-2 rounded-lg border border-[#e5e2e1] bg-[#f6f3f2] p-2 text-sm text-[#1b1b1c]">
+              <label className="flex items-center gap-2 rounded-[12px] border border-[#e5e2e1] bg-[#f6f3f2] p-2 text-sm text-[#1b1b1c]">
                 <input type="checkbox" className="h-4 w-4" />
-                <span className="material-symbols-outlined text-[18px]">view_in_ar</span>
-                Virtual try-on available
+                <span className="material-symbols-outlined text-[18px]">document_scanner</span>
+                AI Analysis enabled
               </label>
             </div>
           </div>

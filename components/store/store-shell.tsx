@@ -4,7 +4,7 @@ import { Navbar } from "@/components/store/navbar";
 
 type StoreShellProps = {
   children: ReactNode;
-  active?: "shop" | "account" | "cart";
+  active?: "shop" | "account" | "cart" | "faq";
 };
 
 export function StoreShell({ children, active }: StoreShellProps) {

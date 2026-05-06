@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type CartSummaryProps = {
   subtotal: number;
 };
@@ -27,9 +29,12 @@ export function CartSummary({ subtotal }: CartSummaryProps) {
         </div>
       </div>
       <div className="space-y-3">
-        <button className="btn-primary w-full py-3 text-sm font-semibold uppercase tracking-wider">
+        <Link 
+          href="/checkout"
+          className="btn-primary block w-full text-center py-3 text-sm font-semibold uppercase tracking-wider"
+        >
           Checkout
-        </button>
+        </Link>
         <div className="flex items-center justify-center gap-1 text-xs uppercase tracking-wider text-zinc-500">
           <span className="material-symbols-outlined text-[16px]">lock</span>
           <span>Secure checkout</span>
