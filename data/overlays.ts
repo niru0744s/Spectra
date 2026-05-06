@@ -1,3 +1,5 @@
+import { glassesProducts } from "@/data/glasses-products";
+
 export interface OverlayMetadata {
   overlayImageUrl: string;
   referenceEyeDist: number;
@@ -6,41 +8,32 @@ export interface OverlayMetadata {
   scaleMultiplier: number;
 }
 
-const DEFAULT_OVERLAY_URL = "/overlays/default-glasses.svg";
+const DEFAULT_OVERLAY_URL = "/assets/glasses/img1.png";
 
-const overlayData: Record<string, OverlayMetadata> = {
-  "eclipse-aviators": {
-    overlayImageUrl: DEFAULT_OVERLAY_URL,
-    referenceEyeDist: 85,
-    offsetX: 0,
-    offsetY: -15,
-    scaleMultiplier: 1.2,
+const overlayData: Record<string, OverlayMetadata> = glassesProducts.reduce(
+  (acc, product) => {
+    acc[product.slug] = {
+      overlayImageUrl: product.image,
+      referenceEyeDist: 85,
+      offsetX: 0,
+      offsetY: product.yOffset,
+      scaleMultiplier: product.scaleFactor,
+    };
+    return acc;
   },
-  kyoto: {
-    overlayImageUrl: DEFAULT_OVERLAY_URL,
-    referenceEyeDist: 80,
-    offsetX: 5,
-    offsetY: -12,
-    scaleMultiplier: 1.15,
-  },
-  atlas: {
-    overlayImageUrl: DEFAULT_OVERLAY_URL,
-    referenceEyeDist: 90,
-    offsetX: -5,
-    offsetY: -18,
-    scaleMultiplier: 1.25,
-  },
-  oslo: {
-    overlayImageUrl: DEFAULT_OVERLAY_URL,
-    referenceEyeDist: 82,
-    offsetX: 2,
-    offsetY: -14,
-    scaleMultiplier: 1.18,
-  },
-};
+  {} as Record<string, OverlayMetadata>
+);
 
 export function getOverlayMetadata(productSlug: string): OverlayMetadata | null {
-  return overlayData[productSlug] || null;
+  return (
+    overlayData[productSlug] || {
+      overlayImageUrl: DEFAULT_OVERLAY_URL,
+      referenceEyeDist: 85,
+      offsetX: 0,
+      offsetY: 6,
+      scaleMultiplier: 2.0,
+    }
+  );
 }
 
 export function getAllOverlayMetadata(): Record<string, OverlayMetadata> {

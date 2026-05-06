@@ -6,88 +6,132 @@ import {
   PerfectCorpResponse,
 } from "@/lib/types";
 import { generateUploadId, saveUpload, getUploadMetadata } from "@/lib/storage";
+import { v2 as cloudinary } from "cloudinary";
 
-function getMockLandmarksResponse(
-  imageWidth: number,
-  imageHeight: number
-): PerfectCorpResponse {
-  return {
-    result: {
-      faces: [
-        {
-          confidence: 0.92,
-          landmarks: {
-            leftEye: { x: imageWidth * 0.35, y: imageHeight * 0.4 },
-            rightEye: { x: imageWidth * 0.65, y: imageHeight * 0.4 },
-            noseTip: { x: imageWidth * 0.5, y: imageHeight * 0.55 },
-            leftEar: { x: imageWidth * 0.15, y: imageHeight * 0.45 },
-            rightEar: { x: imageWidth * 0.85, y: imageHeight * 0.45 },
-          },
-        },
-      ],
-      image: {
-        width: imageWidth,
-        height: imageHeight,
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_SECRET,
+});
+
+
+
+async function uploadToCloudinary(imageBuffer: Buffer): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!process.env.CLOUD_NAME) {
+      return reject(new Error("Missing Cloudinary credentials in .env"));
+    }
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "perfectFace",
+        transformation: [
+          { width: 2048, height: 2048, crop: "limit", quality: "auto", fetch_format: "auto" }
+        ]
       },
-    },
-  };
+      (error, result) => {
+        if (result && result.secure_url) {
+          resolve(result.secure_url);
+        } else {
+          reject(error);
+        }
+      }
+    );
+    uploadStream.end(imageBuffer);
+  });
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function callPerfectCorpAPI(
-  imageBuffer: Buffer
+  imageBuffer: Buffer,
+  signal?: AbortSignal
 ): Promise<PerfectCorpResponse | null> {
   const apiKey = process.env.PERFECTCORP_API_KEY;
-  const apiSecret = process.env.PERFECTCORP_API_SECRET;
-  const landmarksUrl =
-    process.env.PERFECTCORP_LANDMARKS_URL ||
-    "https://api.perfectcorp.com/face-detection";
+  // Use the correct Skin Analysis endpoint
+  const baseUrl = "https://yce-api-01.makeupar.com/s2s/v2.1/task/skin-analysis";
   const useMock = process.env.USE_MOCK_LANDMARKS === "true";
 
-  if (!apiKey || !apiSecret) {
+  if (!apiKey) {
     console.error("Missing Perfect Corp credentials");
-    if (useMock) {
-      console.warn("Using mock landmarks (no credentials provided)");
-      return getMockLandmarksResponse(1280, 720);
-    }
     return null;
   }
 
   try {
-    const formData = new FormData();
-    const arrayBuffer = imageBuffer.buffer.slice(
-      imageBuffer.byteOffset,
-      imageBuffer.byteOffset + imageBuffer.byteLength
-    ) as ArrayBuffer;
-    const blob = new Blob([arrayBuffer], { type: "application/octet-stream" });
-    formData.append("file", blob, "image.jpg");
+    console.log("1. Uploading image to Cloudinary...");
+    const cloudinaryUrl = await uploadToCloudinary(imageBuffer);
+    console.log("Cloudinary Upload Success:", cloudinaryUrl);
 
-    const response = await fetch(landmarksUrl, {
-      method: "POST",
-      headers: {
-        "X-API-Key": apiKey,
-        "X-API-Secret": apiSecret,
-      },
-      body: formData,
-      signal: AbortSignal.timeout(15000),
+    console.log("2. Starting Perfect Corp Task...");
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const initBody = JSON.stringify({
+      src_file_url: cloudinaryUrl,
+      format: "json",
+      dst_actions: [
+        "acne",
+        "droopy_lower_eyelid",
+        "eye_bag",
+        "moisture",
+        "firmness",
+        "oiliness",
+        "radiance"
+      ],
     });
 
-    if (!response.ok) {
-      const upstreamBody = await response.text();
-      console.error("Perfect Corp API error:", response.status, upstreamBody);
-      if (useMock) {
-        console.warn("Upstream returned non-2xx, falling back to mock landmarks");
-        return getMockLandmarksResponse(1280, 720);
-      }
+    const startRes = await fetch(baseUrl, {
+      method: "POST",
+      headers,
+      body: initBody,
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+    });
+
+    if (!startRes.ok) {
+      console.error("Perfect Corp API Start Error:", startRes.status, await startRes.text());
       return null;
     }
 
-    return (await response.json()) as PerfectCorpResponse;
+    const startJson = await startRes.json();
+    const taskId = startJson?.data?.task_id;
+
+    if (!taskId) {
+      console.error("task_id not found in response:", startJson);
+      return null;
+    }
+
+    console.log("3. Polling Perfect Corp Task ID:", taskId);
+    for (let attempt = 1; attempt <= 30; attempt++) {
+      const pollUrl = `${baseUrl}/${encodeURIComponent(taskId)}`;
+      const pollRes = await fetch(pollUrl, {
+        method: "GET",
+        headers,
+        signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000),
+      });
+
+      if (!pollRes.ok) throw new Error(`Polling failed: ${pollRes.status}`);
+
+      const pollJson = await pollRes.json();
+      const taskStatus = pollJson?.data?.task_status;
+      console.log(`[Attempt ${attempt}] Status:`, taskStatus);
+
+      if (taskStatus === "success") {
+        // We attempt to map their asynchronous response back to our expected shape
+        // Note: The exact shape depends on their endpoint. If it's different, it might crash here.
+        // We will pass the full results to the frontend.
+        return pollJson.data.results || pollJson;
+      }
+      if (taskStatus === "error") {
+        throw new Error(`Task failed: ${JSON.stringify(pollJson)}`);
+      }
+
+      await sleep(2000);
+    }
+
+    throw new Error("Max polling attempts exceeded");
   } catch (error) {
     console.error("Perfect Corp API call failed:", error);
-    if (useMock) {
-      console.warn("Real API failed, falling back to mock landmarks");
-      return getMockLandmarksResponse(1280, 720);
-    }
     return null;
   }
 }
@@ -137,7 +181,7 @@ export async function POST(
     const buffer = await file.arrayBuffer();
     const imageBuffer = Buffer.from(buffer);
 
-    const perfectCorpResponse = await callPerfectCorpAPI(imageBuffer);
+    const perfectCorpResponse = await callPerfectCorpAPI(imageBuffer, req.signal);
 
     if (!perfectCorpResponse) {
       return NextResponse.json(
@@ -150,82 +194,34 @@ export async function POST(
       );
     }
 
-    if (perfectCorpResponse.error || !perfectCorpResponse.result) {
+    // Now pivoting to Skin Analysis / Skincare Product Recommendation!
+    // The perfectCorpResponse contains the AI output for acne, oiliness, etc.
+    console.log("=== RAW API RESPONSE FROM PERFECT CORP ===");
+    console.dir(perfectCorpResponse, { depth: null });
+
+    if (perfectCorpResponse.error) {
       return NextResponse.json(
         {
           ok: false,
           code: "UPSTREAM_ERROR",
-          message:
-            perfectCorpResponse.error ||
-            "Unknown error from face detection service",
+          message: perfectCorpResponse.error,
         },
         { status: 500 }
       );
     }
 
-    const faces = perfectCorpResponse.result.faces || [];
-
-    if (faces.length === 0) {
-      return NextResponse.json({
-        ok: false,
-        code: "NO_FACE",
-        message: "No face detected in the image",
-      });
-    }
-
-    if (faces.length > 1) {
-      return NextResponse.json({
-        ok: false,
-        code: "MULTIPLE_FACES",
-        message: "Multiple faces detected. Please upload a photo with only one face.",
-      });
-    }
-
-    const face = faces[0];
-    const confidence = face.confidence || 0;
-
-    if (confidence < CONFIDENCE_THRESHOLD) {
-      const percent = (confidence * 100).toFixed(1);
-      return NextResponse.json({
-        ok: false,
-        code: "LOW_CONFIDENCE",
-        message: `Face confidence too low (${percent}%). Please try a clearer photo.`,
-      });
-    }
-
-    const landmarks = face.landmarks || {};
-    const imageWidth = perfectCorpResponse.result.image?.width || 0;
-    const imageHeight = perfectCorpResponse.result.image?.height || 0;
-
-    if (!imageWidth || !imageHeight) {
-      return NextResponse.json(
-        {
-          ok: false,
-          code: "UPSTREAM_ERROR",
-          message: "Invalid image dimensions from face detection service",
-        },
-        { status: 500 }
-      );
-    }
-
-    const uploadId = generateUploadId();
-    saveUpload(uploadId, imageBuffer);
-
-    const metadata = getUploadMetadata(uploadId);
+    // Try to extract the output array from the response
+    let skinData = null;
+    if (perfectCorpResponse.output) skinData = perfectCorpResponse.output;
+    else if (perfectCorpResponse.results && perfectCorpResponse.results.output) skinData = perfectCorpResponse.results.output;
+    else if (Array.isArray(perfectCorpResponse)) skinData = perfectCorpResponse;
+    else skinData = perfectCorpResponse; // Send the whole thing if we can't find .output
 
     return NextResponse.json({
       ok: true,
-      faceCount: 1,
-      confidence,
-      image: {
-        width: imageWidth,
-        height: imageHeight,
+      data: {
+        skinAnalysis: skinData
       },
-      landmarks,
-      uploadId,
-      expiresAt:
-        metadata?.expiresAt ||
-        new Date(Date.now() + 6 * 3600 * 1000).toISOString(),
     });
   } catch (error) {
     console.error("Landmarks API error:", error);
