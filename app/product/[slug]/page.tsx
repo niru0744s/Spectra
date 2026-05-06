@@ -1,3 +1,6 @@
+"use client";
+
+import React, { use } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AccordionSpecs } from "@/components/store/accordion-specs";
@@ -5,14 +8,17 @@ import { ColorSwatches } from "@/components/store/color-swatches";
 import { StoreShell } from "@/components/store/store-shell";
 import { TryOnJumpButton } from "@/components/store/try-on-jump-button";
 import { TryOnModule } from "@/components/store/try-on-module";
-import { getProductBySlug } from "@/lib/mock-data";
+import { useProducts } from "@/components/store/product-context";
+import { useCart } from "@/components/store/cart-context";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  const { slug } = await params;
+export default function ProductPage({ params }: ProductPageProps) {
+  const { slug } = use(params);
+  const { getProductBySlug } = useProducts();
+  const { addToCart } = useCart();
   const product = getProductBySlug(slug);
 
   if (!product) {
@@ -72,7 +78,20 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             <div className="mb-8 space-y-3">
-              <button className="btn-primary flex w-full items-center justify-center gap-2 py-4 text-sm font-semibold">
+              <button 
+                onClick={() => {
+                  addToCart({
+                    id: "temp",
+                    productSlug: product.slug,
+                    title: product.name,
+                    variant: product.frameColorLabel || "Default",
+                    quantity: 1,
+                    unitPrice: product.price,
+                    image: product.image
+                  });
+                }}
+                className="btn-primary flex w-full items-center justify-center gap-2 py-4 text-sm font-semibold"
+              >
                 Add to Cart
                 <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
               </button>
@@ -88,7 +107,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div id="faq" className="card-soft p-6">
           <h3 className="mb-2 text-2xl font-medium text-[#1b1b1c]">Need help choosing?</h3>
           <p className="text-zinc-600">
-            Our fit experts can help you compare sizes, lens options, and frame balance before checkout.
+            Our skincare experts can help you compare active ingredients, formulations, and routines before checkout.
           </p>
           <Link href="/auth/sign-in" className="mt-4 inline-block text-sm font-medium text-[#1e2a44] hover:underline">
             Contact support

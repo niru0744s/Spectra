@@ -1,18 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import { ProductCard } from "@/components/store/product-card";
 import { StoreShell } from "@/components/store/store-shell";
-import { products } from "@/lib/mock-data";
+import { useProducts } from "@/components/store/product-context";
 
 export default function HomePage() {
+  const { products } = useProducts();
   const featured = products.slice(0, 4);
 
   return (
     <StoreShell active="shop">
       <section className="relative min-h-[720px] overflow-hidden bg-[#FAFAF8]">
         <img
-          src="https://images.unsplash.com/photo-1615397323719-58b4f1791a8d?auto=format&fit=crop&q=80&w=1200&h=800"
+          src="/hero_bg.png"
           alt="Skincare hero"
-          className="absolute inset-0 h-full w-full object-cover opacity-60"
+          className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-multiply"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#FAFAF8] via-[#FAFAF8]/80 to-transparent" />
 

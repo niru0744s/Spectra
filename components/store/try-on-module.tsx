@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 
 const SKINCARE_PRODUCTS = [
   {
     id: "salicylic-acid",
+    slug: "clarifying-bha-wash",
     name: "Clarifying BHA 2% Gel Wash",
     brand: "Lumina Labs",
     price: "$28.00",
@@ -14,6 +16,7 @@ const SKINCARE_PRODUCTS = [
   },
   {
     id: "niacinamide",
+    slug: "niacinamide-drops",
     name: "Niacinamide + Zinc Mattifying Drops",
     brand: "Lumina Labs",
     price: "$34.00",
@@ -23,6 +26,7 @@ const SKINCARE_PRODUCTS = [
   },
   {
     id: "hydro-plump",
+    slug: "hydro-plump",
     name: "Hydro-Plump Moisture Surge",
     brand: "AquaBotanica",
     price: "$42.00",
@@ -32,6 +36,7 @@ const SKINCARE_PRODUCTS = [
   },
   {
     id: "retinol",
+    slug: "retinol-renewal",
     name: "Retinol 0.5% Night Renewal",
     brand: "DermaScience",
     price: "$65.00",
@@ -301,7 +306,7 @@ export function TryOnModule({ productSlug }: TryOnModuleProps) {
               <h3 className="mb-5 text-lg font-medium tracking-tight text-[#1E1E1E]">Curated Regimen</h3>
               <div className="space-y-4">
                 {recommendations.slice(0, 3).map((product) => (
-                  <div key={product.id} className="group relative flex cursor-pointer items-start gap-5 rounded-[12px] border border-[#E8E8E8] bg-white p-5 transition-all duration-300 hover:border-[#1E2A44] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+                  <Link href={`/product/${product.slug}`} key={product.id} className="group relative flex cursor-pointer items-start gap-5 rounded-[12px] border border-[#E8E8E8] bg-white p-5 transition-all duration-300 hover:border-[#1E2A44] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
                     <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-[8px] bg-[#FAFAF8]">
                       <img src={product.image} alt={product.name} className="h-full w-full object-cover mix-blend-multiply transition-transform duration-700 group-hover:scale-105" />
                     </div>
@@ -313,7 +318,7 @@ export function TryOnModule({ productSlug }: TryOnModuleProps) {
                       <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-[#45464d]">{product.description}</p>
                       <p className="mt-3 text-sm font-semibold text-[#1E2A44]">{product.price}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

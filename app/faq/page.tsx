@@ -3,24 +3,24 @@ import { StoreShell } from "@/components/store/store-shell";
 
 const faqItems = [
   {
-    question: "How does virtual try-on work?",
+    question: "Are Spectra products cruelty-free?",
     answer:
-      "Upload a clear front-facing photo, then we detect facial landmarks to position the sunglasses overlay. You can fine-tune fit with scale and rotate controls.",
+      "Yes, all Spectra products are 100% cruelty-free and never tested on animals. We are committed to ethical and sustainable beauty practices.",
   },
   {
-    question: "What kind of photo gives the best result?",
+    question: "Are your products suitable for sensitive skin?",
     answer:
-      "Use a front-facing photo with good lighting and no heavy filters. Keep your full face visible for reliable eye landmark detection.",
+      "Our skincare line is carefully formulated with gentle, clinically tested ingredients without harsh irritants. However, we always recommend doing a patch test before incorporating any new product into your routine.",
   },
   {
-    question: "Are my photos stored permanently?",
+    question: "How can I find the right skincare routine for my skin type?",
     answer:
-      "No. Uploaded photos are temporary and are automatically deleted after the configured TTL window (6 hours by default).",
+      "You can browse our collections by skin type—such as oily, dry, or combination—or check the product descriptions for specific active ingredients. Our support team is also available to help build your perfect regimen.",
   },
   {
-    question: "Why am I seeing a no-face or low-confidence error?",
+    question: "What is your return policy?",
     answer:
-      "This usually happens with poor lighting, angled faces, multiple people in frame, or blurry images. Try a clearer single-face image.",
+      "We want you to love your skin. We offer a 30-day money-back guarantee. If a product doesn't work out for you, simply return the gently used item within 30 days for a full refund.",
   },
 ];
 
@@ -31,7 +31,7 @@ export default function FaqPage() {
         <div className="mb-10 text-center">
           <h1 className="mb-3 text-4xl font-medium text-[#1e2a44]">Frequently Asked Questions</h1>
           <p className="mx-auto max-w-2xl text-zinc-600">
-            Everything you need to know about Spectra shopping and the Virtual Try-On experience.
+            Everything you need to know about Spectra skincare, our clean ingredients, and our beauty community.
           </p>
         </div>
 

@@ -1,8 +1,11 @@
+"use client";
+
 import { ProductCard } from "@/components/store/product-card";
 import { StoreShell } from "@/components/store/store-shell";
-import { products } from "@/lib/mock-data";
+import { useProducts } from "@/components/store/product-context";
 
 export default function ShopPage() {
+  const { products } = useProducts();
   return (
     <StoreShell active="shop">
       <section className="spectra-container flex flex-col gap-8 py-12 md:flex-row">
