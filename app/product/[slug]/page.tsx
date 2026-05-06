@@ -83,7 +83,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
 
-        <TryOnModule modelImage={modelImage} overlayImage={overlayImage} />
+        <TryOnModule productSlug={slug} />
 
         <div id="faq" className="card-soft p-6">
           <h3 className="mb-2 text-2xl font-medium text-[#1b1b1c]">Need help choosing?</h3>
